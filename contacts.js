@@ -5,39 +5,53 @@ const { v4: uuidv4 } = require("uuid");
 const contactsPath = path.normalize(__dirname + "/db/contacts.json");
 
 async function listContacts() {
-  fs.readFile(contactsPath, "utf-8")
-    .then(JSON.parse)
-    .then(console.table)
-    .catch((err) => console.log(err));
+  try {
+    const data = await fs.readFile(contactsPath);
+    console.table(JSON.parse(data));
+    return JSON.parse(data);
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 async function getContactById(contactId) {
-  fs.readFile(contactsPath, "utf-8")
-    .then(JSON.parse)
-    .then((data) => data.find((el) => String(el.id) === String(contactId)))
-    .then(console.log)
-    .catch((err) => console.log(err));
+  try {
+    const data = await listContacts();
+    return console.log(
+      data.filter((contact) => contact.id === String(contactId))
+    );
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 async function removeContact(contactId) {
-  fs.readFile(contactsPath, "utf-8")
-    .then(JSON.parse)
-    .then(async (data) => {
-      const contacs = data.filter((el) => String(el.id) !== String(contactId));
-      await fs.writeFile(contactsPath, JSON.stringify(contacs, null, 2));
-    })
-    .catch((err) => console.log(err));
+  try {
+    const sourceContacts = await listContacts();
+    const newContacts = sourceContacts.filter(
+      (contact) => contact.id !== String(contactId)
+    );
+    await fs.writeFile(contactsPath, JSON.stringify(newContacts), "utf8");
+    return sourceContacts.filter((contact) => contact.id === id);
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 async function addContact(name, email, phone) {
-  const id = uuidv4();
-  const newContact = { id, name, email, phone };
+  try {
+    const id = await uuidv4();
 
-  const data = await fs.readFile(contactsPath, "utf-8");
-  const content = JSON.parse(data);
-  content.push(newContact);
-  await fs.writeFile(contactsPath, JSON.stringify(content, null, 2));
-  console.table(content);
+    const newContact = { id, name, email, phone };
+
+    const sourceContacts = await listContacts();
+    const newContacts = [...sourceContacts, newContact];
+
+    await fs.writeFile(contactsPath, JSON.stringify(newContacts), "utf8");
+    return newContact;
+  } catch (err) {
+    console.error(err);
+  }
 }
 
 module.exports = { listContacts, getContactById, removeContact, addContact };
